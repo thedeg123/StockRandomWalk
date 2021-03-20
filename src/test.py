@@ -1,4 +1,5 @@
 import json
-with open('../static/profile.json') as f:
+from random import choice
+with open("./static/tickers.json") as f:
     data = json.load(f)
-    print(data)
+    print(choice(data))
