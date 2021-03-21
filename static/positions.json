@@ -1,7 +1,1 @@
-[
-  {
-    "ticker": "AAPL",
-    "purchase_price": 100,
-    "purchase_date": "01/01/01"
-  }
-]
+[{"ticker": "BTC", "purchase_price": "58402.070000000000000000", "quantity": "0.000017000000000000"}]
