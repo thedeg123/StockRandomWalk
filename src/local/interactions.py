@@ -9,6 +9,8 @@ def getAuth() -> dict:
 
 
 def getRandomTicker() -> str:
+    # if getPositions()[0]["ticker"] == "BTC":
+    #     return "ETH"
     return "BTC"
     with open("./static/tickers.json") as f:
         data = json.load(f)

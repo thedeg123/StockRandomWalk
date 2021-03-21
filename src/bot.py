@@ -18,7 +18,8 @@ def checkMarketOpen() -> bool:
 
 
 def buyStock(ticker: str) -> bool:
-    order = robinhood.order_buy_crypto_by_price(ticker, 1)
+    order = robinhood.order_buy_crypto_by_price(
+        ticker, getAuth()["trade_limit"])
     if 'id' not in order.keys():
         logging.info('Failed to buy: {}'.format(order))
         return False
@@ -31,7 +32,8 @@ def buyStock(ticker: str) -> bool:
 
 
 def sellStock(stock: dict) -> bool:
-    order = robinhood.order_sell_crypto_by_price(stock["ticker"], 1)
+    order = robinhood.order_sell_crypto_by_quantity(
+        stock["ticker"], stock["quantity"])
     if 'id' not in order.keys():
         logging.info('Failed to buy: {}'.format(order))
         return False
@@ -49,9 +51,9 @@ def excecuteTrade() -> bool:
     if True:
         stock = getPositions()[0]
         sellStock(stock)
-        time.sleep(120)
-        ticker = getRandomTicker()
-        buyStock(ticker)
+        # time.sleep(20)
+        #ticker = getRandomTicker()
+        # buyStock(ticker)
     else:
         logging.warning('Trade called during market close')
 
@@ -66,3 +68,8 @@ if __name__ == "__main__":
     logging.basicConfig(filename='./logs/trades.log',
                         encoding='utf-8', format='%(asctime)s %(message)s', level=logging.INFO)
     runBot()
+
+
+'''
+want to set next trade with amount secured from last trade
+'''
