@@ -97,9 +97,12 @@ def excecuteTrade(orderType: str) -> bool:
 
 
 def runBot(rate: int):
+    '''
+    In a tik tok fashion we buy, hold for time rate, sell, wait for time rate/10, buy etc
+    '''
     while True:
         excecuteTrade("sell" if getHolding() else "buy")
-        time.sleep(rate)
+        time.sleep(rate if getHolding() else 1+(rate//10))
 
 
 if __name__ == "__main__":
