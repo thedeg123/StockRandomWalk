@@ -8,7 +8,11 @@ def getProfile() -> dict:
     return profile
 
 
-def getRandomTicker() -> str:
+def getRandomTicker(crypto: bool = False) -> str:
+    if crypto:
+        if getPositions()[0]["ticker"] == "BTC":
+            return "ETH"
+        return "BTC"
     if getPositions()[0]["ticker"] == "AAPL":
         return "MSFT"
     return "AAPL"
@@ -21,28 +25,57 @@ def getRandomTicker() -> str:
 def getPositions() -> str:
     with open("./static/positions.json") as f:
         positions = json.load(f)
-    return positions
+    return positions["positions"]
+
+
+def getPurchasePower() -> float:
+    if getHolding():
+        return 0.0
+    with open("./static/positions.json") as f:
+        power = json.load(f)["purchase_power"]
+    return float(power)
 
 
 def getHolding() -> bool:
-    with open("./static/holding.json") as f:
-        holding = json.load(f)
-    return holding["holding"]
+    with open("./static/positions.json") as f:
+        positions = json.load(f)
+    return bool(positions["holding"])
 
 
 def setHolding(holding: bool) -> bool:
-    with open("./static/holding.json", "w") as f:
-        json.dump({"holding": holding}, f)
+    purchasePower = getPurchasePower()
+    positions = getPositions()
+    with open("./static/positions.json", "w") as f:
+        json.dump({"holding": holding,
+                   "purchase_power": purchasePower,
+                   "positions": positions
+                   }, f)
+    return True
+
+
+def setPurchasePower(power: float) -> bool:
+    holding = getHolding()
+    positions = getPositions()
+    with open("./static/positions.json", "w") as f:
+        json.dump({"holding": holding,
+                   "purchase_power": power,
+                   "positions": positions
+                   }, f)
     return True
 
 
 def setPositions(ticker: str, price: float, quantity: float) -> bool:
+    holding = getHolding()
+    purchasePower = getPurchasePower()
     with open("./static/positions.json", "w") as f:
-        json.dump([
-            {
-                "ticker": ticker,
-                "purchase_price": price,
-                "quantity": quantity
-            }
-        ], f)
+        json.dump({
+            "holding": holding,
+            "purchase_power": purchasePower,
+            "positions": [
+                {
+                    "ticker": ticker,
+                    "purchase_price": price,
+                    "quantity": quantity
+                }
+            ]}, f)
     return True

@@ -5,6 +5,8 @@ import robin_stocks.robinhood as robinhood
 from pyotp import TOTP
 from datetime import datetime
 
+CRYPTO = True
+
 
 def login():
     user, password, limit, totp_string, rate = getProfile().values()
@@ -13,6 +15,8 @@ def login():
 
 
 def checkMarketOpen() -> bool:
+    if CRYPTO:
+        return True
     hours = robinhood.get_market_today_hours("XNYS")
     mktOpen = datetime.strptime(hours["opens_at"], "%Y-%m-%dT%H:%M:%SZ")
     mktClose = datetime.strptime(hours["opens_at"], "%Y-%m-%dT%H:%M:%SZ")
@@ -20,8 +24,14 @@ def checkMarketOpen() -> bool:
 
 
 def buyStock(ticker: str) -> bool:
-    order = robinhood.order_buy_fractional_by_price(
-        ticker, getProfile()["trade_limit"])
+    purchaseAmount = getPurchasePower() or getProfile()["trade_limit"]
+    if CRYPTO:
+        order = robinhood.order_buy_crypto_by_price(
+            ticker, purchaseAmount)
+    else:
+        order = robinhood.order_buy_fractional_by_price(
+            ticker, purchaseAmount)
+
     if 'id' not in order.keys():
         logging.info('Failed to buy: {}'.format(order))
         return False
@@ -29,20 +39,28 @@ def buyStock(ticker: str) -> bool:
         logging.info('Bought: {} shares of {} for {}'.format(
             order["quantity"], ticker, order["price"]))
         setPositions(ticker, order["price"], order["quantity"])
+        setHolding(True)
     return True
 
 
 def sellStock(stock: dict) -> bool:
-    order = robinhood.order_sell_fractional_by_price(
-        stock["ticker"], stock["quantity"])
+    if CRYPTO:
+        order = robinhood.order_sell_crypto_by_quantity(
+            stock["ticker"], float(stock["quantity"]))
+    else:
+        order = robinhood.order_sell_fractional_by_quantity(
+            stock["ticker"], float(stock["quantity"]))
     if 'id' not in order.keys():
-        logging.info('Failed to buy: {}'.format(order))
+        logging.info('Failed to sell: {}'.format(order))
         return False
     else:
+        revenue = float(stock["quantity"]) * float(order["price"])
         beta = float(stock["quantity"]) * \
             (float(order["price"]) - float(stock["purchase_price"]))
         logging.info('Sold: {} for {} making {}'.format(
             stock["ticker"], float(order["price"]), beta))
+        setHolding(False)
+        setPurchasePower(revenue)
     return True
 
 
@@ -54,7 +72,10 @@ def allowOrder() -> bool:
     if not checkMarketOpen():
         logging.warning('Trade called during market close')
         return False
-    orders = robinhood.get_all_open_stock_orders()
+    if CRYPTO:
+        orders = robinhood.get_all_open_crypto_orders()
+    else:
+        orders = robinhood.get_all_open_stock_orders()
     if orders:
         logging.warning(
             'Trade called before previus order for {} closed, since: {}'.format(
@@ -70,10 +91,8 @@ def excecuteTrade(orderType: str) -> bool:
             stock = getPositions()[0]
             res = sellStock(stock)
         else:
-            ticker = getRandomTicker()
+            ticker = getRandomTicker(CRYPTO)
             res = buyStock(ticker)
-        if res:
-            setHolding(orderType == "buy")
         return res
 
 
@@ -87,8 +106,3 @@ if __name__ == "__main__":
     logging.basicConfig(filename='./logs/trades.log',
                         encoding='utf-8', format='%(asctime)s %(message)s', level=logging.INFO)
     runBot(getProfile()["trade_rate"])
-
-
-'''
-want to set next trade with amount secured from last trade only after last trade was excecuted 
-'''

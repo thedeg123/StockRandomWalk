@@ -1,1 +1,1 @@
-[{"ticker": "AAPL", "purchase_price": "123.13000000", "quantity": "0.01620000"}]
+{"holding": true, "purchase_power": 2.0227048, "positions": [{"ticker": "BTC", "purchase_price": "54911.110000000000000000", "quantity": "0.000037000000000000"}]}
