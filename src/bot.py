@@ -16,7 +16,7 @@ def checkMarketOpen() -> bool:
     hours = robinhood.get_market_today_hours("XNYS")
     mktOpen = datetime.strptime(hours["opens_at"], "%Y-%m-%dT%H:%M:%SZ")
     mktClose = datetime.strptime(hours["opens_at"], "%Y-%m-%dT%H:%M:%SZ")
-    return hours["is_open"] and mktOpen < datetime.now() < mktClose
+    return hours["is_open"] and mktOpen < datetime.utcnow() < mktClose
 
 
 def buyStock(ticker: str) -> bool:
