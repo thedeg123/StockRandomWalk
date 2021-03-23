@@ -5,7 +5,7 @@ import robin_stocks.robinhood as robinhood
 from pyotp import TOTP
 from datetime import datetime
 
-CRYPTO = True
+CRYPTO = False
 
 
 def login():
@@ -19,7 +19,7 @@ def checkMarketOpen() -> bool:
         return True
     hours = robinhood.get_market_today_hours("XNYS")
     mktOpen = datetime.strptime(hours["opens_at"], "%Y-%m-%dT%H:%M:%SZ")
-    mktClose = datetime.strptime(hours["opens_at"], "%Y-%m-%dT%H:%M:%SZ")
+    mktClose = datetime.strptime(hours["closes_at"], "%Y-%m-%dT%H:%M:%SZ")
     return hours["is_open"] and mktOpen < datetime.utcnow() < mktClose
 
 
@@ -98,11 +98,11 @@ def excecuteTrade(orderType: str) -> bool:
 
 def runBot(rate: int):
     '''
-    In a tik tok fashion we buy, hold for time rate, sell, wait for time rate/10, buy etc
+    In a tik tok fashion we buy, hold for time rate, sell, wait for 5, buy etc
     '''
     while True:
         excecuteTrade("sell" if getHolding() else "buy")
-        time.sleep(rate if getHolding() else 1+(rate//10))
+        time.sleep(rate if getHolding() else 5)
 
 
 if __name__ == "__main__":
