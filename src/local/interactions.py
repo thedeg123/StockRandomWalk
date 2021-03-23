@@ -8,15 +8,13 @@ def getProfile() -> dict:
     return profile
 
 
-def getRandomTicker(crypto: bool = False) -> str:
+def getRandomTicker(crypto: bool = False, sAndPOnly: bool = True) -> str:
     if crypto:
         if getPositions()[0]["ticker"] == "BTC":
             return "ETH"
         return "BTC"
-    if getPositions()[0]["ticker"] == "AAPL":
-        return "MSFT"
-    return "AAPL"
-    with open("./static/tickers.json") as f:
+    fileString = "./static/s&p.json" if sAndPOnly else "./static/tickers.json"
+    with open(fileString) as f:
         data = json.load(f)
         stock = choice(data)
     return stock

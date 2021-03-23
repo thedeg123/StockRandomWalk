@@ -91,7 +91,7 @@ def excecuteTrade(orderType: str) -> bool:
             stock = getPositions()[0]
             res = sellStock(stock)
         else:
-            ticker = getRandomTicker(CRYPTO)
+            ticker = getRandomTicker(crypto=CRYPTO)
             res = buyStock(ticker)
         return res
 
