@@ -114,6 +114,8 @@ def runBot(rate: int):
         off_hold_wait = 120
         if reason == "market_close":
             off_hold_wait = (getNextMarketOpen() - datetime.utcnow()).seconds
+            logging.warning('Waiting {} hours till next market open'.format(
+                round(off_hold_wait//60)/60, 1))
         time.sleep(rate if getHolding() else off_hold_wait)
 
 
