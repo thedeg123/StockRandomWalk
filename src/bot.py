@@ -14,6 +14,14 @@ def login():
     login = robinhood.login(user, password, mfa_code=totp)
 
 
+def getNextMarketOpen() -> bool:
+    if CRYPTO:
+        return datetime.utcnow()
+    hours = robinhood.get_market_next_open_hours("XNYS")
+    mktOpen = datetime.strptime(hours["opens_at"], "%Y-%m-%dT%H:%M:%SZ")
+    return mktOpen
+
+
 def checkMarketOpen() -> bool:
     if CRYPTO:
         return True
@@ -71,7 +79,7 @@ def allowOrder() -> bool:
     '''
     if not checkMarketOpen():
         logging.warning('Trade called during market close')
-        return False
+        return False, "market_close"
     if CRYPTO:
         orders = robinhood.get_all_open_crypto_orders()
     else:
@@ -80,32 +88,40 @@ def allowOrder() -> bool:
         logging.warning(
             'Trade called before previus order for {} closed, since: {}'.format(
                 getPositions()[0]["ticker"], orders[0]["created_at"]))
-        return False
-    return True
+        return False, "ticket_open"
+    return True, ""
 
 
 def excecuteTrade(orderType: str) -> bool:
     login()
-    if allowOrder():
+    allowed, reason = allowOrder()
+    if allowed:
         if orderType == "sell":
             stock = getPositions()[0]
-            res = sellStock(stock)
+            return sellStock(stock), ""
         else:
             ticker = getRandomTicker(crypto=CRYPTO)
-            res = buyStock(ticker)
-        return res
+            return buyStock(ticker), ""
+    return False, reason
 
 
 def runBot(rate: int):
     '''
-    In a tik tok fashion we buy, hold for time rate, sell, wait for 5, buy etc
+    In a tik tok fashion we buy, hold for time rate, sell, wait for 2 minutes, buy etc
     '''
     while True:
-        excecuteTrade("sell" if getHolding() else "buy")
-        time.sleep(rate if getHolding() else 5)
+        result, reason = excecuteTrade("sell" if getHolding() else "buy")
+        off_hold_wait = 120
+        if reason == "market_close":
+            off_hold_wait = (getNextMarketOpen() - datetime.utcnow()).seconds
+        time.sleep(rate if getHolding() else off_hold_wait)
 
 
 if __name__ == "__main__":
     logging.basicConfig(filename='./logs/trades.log',
                         encoding='utf-8', format='%(asctime)s %(message)s', level=logging.INFO)
-    runBot(getProfile()["trade_rate"])
+    rate = float(getProfile()["trade_rate"])
+    if rate < 60:
+        raise ValueError(
+            "Trade rate must be at least 1 minute but was {}".format(rate))
+    runBot(rate)
