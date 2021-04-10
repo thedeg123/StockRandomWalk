@@ -9,7 +9,7 @@ CRYPTO = False
 
 
 def login():
-    user, password, limit, totp_string, rate = getProfile().values()
+    user, password, limit, totp_string, rate, buy_low = getProfile().values()
     totp = TOTP(totp_string).now()
     login = robinhood.login(user, password, mfa_code=totp)
 
@@ -26,9 +26,11 @@ def checkMarketOpen() -> bool:
     if CRYPTO:
         return True
     hours = robinhood.get_market_today_hours("XNYS")
-    mktOpen = datetime.strptime(hours["opens_at"], "%Y-%m-%dT%H:%M:%SZ")
-    mktClose = datetime.strptime(hours["closes_at"], "%Y-%m-%dT%H:%M:%SZ")
-    return hours["is_open"] and mktOpen < datetime.utcnow() < mktClose
+    if hours["is_open"]:
+        mktOpen = datetime.strptime(hours["opens_at"], "%Y-%m-%dT%H:%M:%SZ")
+        mktClose = datetime.strptime(hours["closes_at"], "%Y-%m-%dT%H:%M:%SZ")
+        return mktOpen < datetime.utcnow() < mktClose
+    return False
 
 
 def buyStock(ticker: str) -> bool:
@@ -100,7 +102,10 @@ def excecuteTrade(orderType: str) -> bool:
             stock = getPositions()[0]
             return sellStock(stock), ""
         else:
-            ticker = getRandomTicker(crypto=CRYPTO)
+            if getProfile()["buy_low"] and not CRYPTO:
+                ticker = robinhood.get_top_movers_sp500("down")[0]["symbol"]
+            else:
+                ticker = getRandomTicker(crypto=CRYPTO)
             return buyStock(ticker), ""
     return False, reason
 
